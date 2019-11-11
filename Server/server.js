@@ -50,6 +50,7 @@ app.post('/getdata_mysql', function (req, res) {
     connection_mysql = mysql.createPool({
         connectionLimit: 50,
         host: req.body.host,
+        port: req.body.port,
         user: req.body.user,
         password: req.body.password,
         database: req.body.database
@@ -59,7 +60,8 @@ app.post('/getdata_mysql', function (req, res) {
         if (!!error) {
             // tempCont.release();
             console.log("Error");
-            res.send(error.code);
+            // console.log(JSON.parse("{\"ERROR\" :" + "\"" + error.code + "\"" + "}"));
+            res.json("ERROR :" + error.code);
         } else {
             console.log("Connected");
             var list_database = "";
@@ -68,7 +70,7 @@ app.post('/getdata_mysql', function (req, res) {
                 // tempCont.release();
                 if (!!error) {
                     console.log('Error in query');
-                    res.send(error.code);
+                    res.json("ERROR :" + error.code );
                 } else {
                     console.log('Successful qurey');
                     // console.log(fields[0].FieldPacket.json().name);
@@ -84,7 +86,7 @@ app.post('/getdata_mysql', function (req, res) {
                             tempCont.query("SELECT * FROM " + temp, function (error, rows, fields) {
                                 if (!!error) {
                                     console.log('Error in each table');
-                                    res.send(error.code);
+                                    res.json("ERROR :" + error.code);
                                 } else {
                                     if (first_table) {
                                         list_database = list_database + "\"" + temp + "\":" + JSON.stringify(rows).replace(/null/gi, "\"null\"");
