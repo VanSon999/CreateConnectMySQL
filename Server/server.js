@@ -4,13 +4,14 @@ var app = express();
 var cors = require('cors')
 var bodyParser = require('body-parser')
 var port = process.env.PORT || 3000
+var multer = require('multer');
+const CSVToJSON = require('csvtojson');
 // var connection = mysql.createConnection({
 //     host: 'localhost',
 //     user: 'root',
 //     password: '',
 //     database: 'testconnect'
 // });
-
 app.use(bodyParser.json())
 app.use(cors())
 app.use(
@@ -70,7 +71,7 @@ app.post('/getdata_mysql', function (req, res) {
                 // tempCont.release();
                 if (!!error) {
                     console.log('Error in query');
-                    res.json("ERROR :" + error.code );
+                    res.json("ERROR :" + error.code);
                 } else {
                     console.log('Successful qurey');
                     // console.log(fields[0].FieldPacket.json().name);
@@ -112,5 +113,53 @@ app.post('/getdata_mysql', function (req, res) {
     }
     )
 });
+
+app.post('/uploads', function (req, res) {
+    // console.log(req.fi);
+    var storage = multer.diskStorage({
+        destination: function (req, file, cb) {
+            cb(null, __dirname + '/uploads')
+        },
+        filename: function (req, file, cb) {
+            cb(null, Date.now() + "-" + file.originalname);
+        }
+    })
+    var upload = multer({ storage: storage }).any();
+    upload(req, res, function (err) {
+        if (err) {
+            // console.log("err", err);
+            res.send({
+                message: "Error",
+                data: err
+            });
+        } else {
+            // console.log("res", res);
+            // console.log("body",req.body);
+            const CSVToJSON = require('csvtojson');
+
+            var list_json = "";
+            for (var x = 0; x < req.files.length; x++) {
+                var path = req.files[x].path; //đường dẫn của file
+                var sync = true;
+                CSVToJSON().fromFile(path).then(data => {
+                    let temp = "\"File " + req.files[x].originalname + "\":" + JSON.stringify(data);
+                    if(x==0){
+                        list_json = temp;
+                    }else{
+                        list_json = list_json + "," + temp;
+                    }
+                    sync = false;
+                });
+                while (sync) { require('deasync').sleep(100); } //syn proccess need enhance!
+            }
+            // console.log("{" + list_json+ "}");
+            list_json = "{" + list_json + "}";
+            res.send({
+                message: 'uploaded',
+                data: list_json
+            });
+        }
+    })
+})
 app.listen(port);
 console.log("Started at port 3000");

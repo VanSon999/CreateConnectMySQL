@@ -46,12 +46,11 @@ class App extends React.Component {
       type_DBMS: value
     });
   }
-  add_file(event){
-    // var list_file = Array.from(event.target.files);
-    // list_file.map(x => {
-    //   return console.log(x);
-    // })
-    console.log(event.target.files);
+  add_file(event) {
+    // console.log(event.target.files);
+    this.setState({
+      files: event.target.files
+    });
   }
   back() {
     this.setState({
@@ -80,8 +79,9 @@ class App extends React.Component {
             alert("Error Happen! Please check and try again\n" + res.data);
             this.setState({
               myJson: "null"
-            })
+            });
           } else {
+            console.log(JSON.stringify(res.data));
             this.setState({
               myJson: JSON.parse(JSON.stringify(res.data))
             });
@@ -91,7 +91,7 @@ class App extends React.Component {
           alert("Error Happen! Please check and try again\n" + err);
           this.setState({
             myJson: "null"
-          })
+          });
         })
     }
     if (this.state.type_DBMS === "Oracle") {
@@ -104,8 +104,52 @@ class App extends React.Component {
 
     }
   }
+  handleSubmit_Files(event) {
+    event.preventDefault();
+    if (!this.isFormValid_File()) {
+      alert("You need select file to upload!");
+      return;
+    }
+    // console.log(this.state.files);
+    let files = this.state.files;
+    // console.log(files);
+    let list_file = new FormData();
+    for (let x = 0; x < files.length; x++) {
+      list_file.append(x, files[x]);
+    }
+    // console.log(file);
+    var contentType = {
+      headers: {
+        "content-type": "multipart/form-data"
+      }
+    }
+    axios
+      .post('/uploads', list_file, contentType)
+      .then(res => {
+        if(res.data.message === "Error"){
+          alert("Error server! Please try again!");
+          this.setState({
+            myJson: "null"
+          });
+        }else{
+          console.log(res.data.data);
+          this.setState({
+            myJson: JSON.parse(res.data.data)
+          });
+        }
+      })
+      .catch(err => {
+        alert("Error Happen! Please check and try again\n" + err);
+        this.setState({
+          myJson: "null"
+        });
+      })
+  }
   isFormValid_Server() {
     return (this.state.host !== "" && this.state.database !== "" && this.state.type_DBMS !== "" && this.state.user !== "");
+  }
+  isFormValid_File() {
+    return (this.state.files !== null);
   }
   render() {
     if (this.state.myJson !== "null") {
@@ -193,11 +237,11 @@ class App extends React.Component {
                   <div className="input-group-btn">
                     <span className="fileUpload btn btn-info">
                       <span className="upl" id="upload">Select file</span>
-                      <input type="file" className="upload up" id="up" accept=".csv" onChange= {event => this.add_file(event)} multiple />{/* Note: onChange */}
+                      <input type="file" className="upload up" id="up" accept=".csv" onChange={event => this.add_file(event)} multiple />{/* Note: onChange */}
                     </span>
                   </div>
                 </div>
-                <button type="submit" className="btn btn-primary">Submit</button>
+                <button type="submit" className="btn btn-primary" onClick={event => this.handleSubmit_Files(event)}>Submit</button>
               </div>
             </div>
           </div>
